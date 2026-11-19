@@ -328,8 +328,8 @@
                 <h3 class="font-bold text-base text-slate-800">📷 Quét / Nhập Mã Vạch</h3>
                 <button onclick="closeBarcodeScanner()" class="text-xl font-bold text-slate-400">&times;</button>
             </div>
-            <video id="m-scanner-video" class="w-full h-52 bg-slate-900 rounded-xl object-cover hidden" playsinline autoplay muted></video>
-            <p id="m-scanner-hint" class="text-xs text-slate-500">Giữ thẳng vạch mã trong khung camera để tự nhận mã, hoặc gõ mã vào ô dưới:</p>
+            <video id="m-scanner-video" class="w-full h-56 bg-slate-900 rounded-xl object-cover hidden" playsinline autoplay muted></video>
+            <p id="m-scanner-hint" class="text-xs text-slate-500">Đưa mã vạch vào khung camera để tự nhận mã, hoặc gõ mã vào ô dưới:</p>
             <div class="flex gap-2">
                 <input type="text" id="m-scanner-manual-code" placeholder="Nhập hoặc quét mã vạch..."
                     onkeydown="if(event.key==='Enter'){submitScannedCode(this.value);}"
@@ -346,7 +346,13 @@
             <h3 id="m-p-modal-title" class="text-base font-bold mb-3">Thêm Sản Phẩm Mới</h3>
             <form onsubmit="mSaveProduct(event)" class="space-y-2.5 text-sm">
                 <input type="hidden" id="m-edit-pid">
-                <input type="text" id="m-p-barcode" placeholder="Mã vạch gốc" required class="w-full p-2.5 border rounded-xl">
+                <div class="flex items-center gap-1.5">
+                    <input type="text" id="m-p-barcode" placeholder="Mã vạch gốc" required class="flex-1 p-2.5 border rounded-xl font-mono">
+                    <button type="button" onclick="openBarcodeScanner('product-form')" title="Quét mã vạch"
+                        class="px-3 py-2.5 bg-blue-50 text-blue-600 border border-blue-200 rounded-xl font-bold text-base active:scale-95">
+                        📷
+                    </button>
+                </div>
                 <input type="text" id="m-p-name" placeholder="Tên sản phẩm" required class="w-full p-2.5 border rounded-xl">
                 <div class="grid grid-cols-3 gap-2">
                     <input type="text" id="m-p-unit" placeholder="ĐV gốc (hộp)" required class="p-2.5 border rounded-xl">
@@ -412,10 +418,11 @@
         let isUserModifiedCash = false;
         let activeOrderDebtId = null;
 
-        // Biến hỗ trợ quét mã vạch bằng ZXing (chạy trên cả iOS Safari & Android)
+        // Biến hỗ trợ quét mã vạch tốc độ cao (ZXing TRY_HARDER + Native BarcodeDetector fallback)
         let scannerContext = 'pos';
         let zxingReader = null;
         let zxingControls = null;
+        let nativeScanRafId = null;
         let lastDetectedCode = '';
 
         function getStoreKeys(id) {
@@ -568,8 +575,27 @@
         }
 
         // ============================================================
-        // QUÉT MÃ VẠCH THẬT BẰNG ZXING (HỖ TRỢ IOS SAFARI & ANDROID)
+        // QUÉT MÃ VẠCH TỐC ĐỘ CAO & ĐA HƯỚNG (ZXING + BARCODEDETECTOR)
         // ============================================================
+        function buildZxingHints() {
+            if (!window.ZXing || !window.ZXing.DecodeHintType) return null;
+            const hints = new Map();
+            hints.set(window.ZXing.DecodeHintType.TRY_HARDER, true);
+            if (window.ZXing.BarcodeFormat) {
+                hints.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+                    window.ZXing.BarcodeFormat.EAN_13,
+                    window.ZXing.BarcodeFormat.EAN_8,
+                    window.ZXing.BarcodeFormat.CODE_128,
+                    window.ZXing.BarcodeFormat.CODE_39,
+                    window.ZXing.BarcodeFormat.UPC_A,
+                    window.ZXing.BarcodeFormat.UPC_E,
+                    window.ZXing.BarcodeFormat.ITF,
+                    window.ZXing.BarcodeFormat.QR_CODE
+                ]);
+            }
+            return hints;
+        }
+
         async function openBarcodeScanner(ctx) {
             scannerContext = ctx;
             lastDetectedCode = '';
@@ -580,27 +606,28 @@
 
             input.value = '';
             video.classList.add('hidden');
-            hint.innerText = 'Đang khởi động camera quét mã vạch...';
+            hint.innerText = 'Đang mở camera quét nhanh mã vạch...';
             modal.classList.remove('hidden');
 
             try {
+                const hints = buildZxingHints();
                 if (window.ZXing && window.ZXing.BrowserMultiFormatReader) {
                     if (!zxingReader) {
-                        zxingReader = new window.ZXing.BrowserMultiFormatReader();
+                        zxingReader = new window.ZXing.BrowserMultiFormatReader(hints, 120);
                     }
                     video.classList.remove('hidden');
-                    hint.innerText = 'Đưa mã vạch nằm ngang vào giữa khung camera để tự nhận mã...';
+                    hint.innerText = 'Đưa mã vạch vào khung camera (hỗ trợ quét nhanh nhiều góc/chiều)...';
 
                     zxingControls = await zxingReader.decodeFromConstraints(
                         {
                             video: {
                                 facingMode: { ideal: 'environment' },
-                                width: { ideal: 1280 },
-                                height: { ideal: 720 }
+                                width: { ideal: 640 },
+                                height: { ideal: 480 }
                             }
                         },
                         video,
-                        (result, err) => {
+                        (result) => {
                             if (result && result.getText) {
                                 const code = result.getText().trim();
                                 if (code && code !== lastDetectedCode) {
@@ -610,17 +637,46 @@
                             }
                         }
                     );
+
+                    // Tăng tốc thêm bằng Native BarcodeDetector nếu trình duyệt hỗ trợ song song
+                    if ('BarcodeDetector' in window && video.readyState >= 2) {
+                        const nativeDetector = new BarcodeDetector({
+                            formats: ['ean_13', 'ean_8', 'code_128', 'code_39', 'upc_a', 'upc_e', 'itf', 'qr_code']
+                        });
+                        const fastLoop = async () => {
+                            if (modal.classList.contains('hidden')) return;
+                            try {
+                                if (video.readyState >= 2 && !video.paused) {
+                                    const found = await nativeDetector.detect(video);
+                                    if (found && found.length > 0 && found[0].rawValue) {
+                                        const c = found[0].rawValue.trim();
+                                        if (c && c !== lastDetectedCode) {
+                                            lastDetectedCode = c;
+                                            submitScannedCode(c);
+                                            return;
+                                        }
+                                    }
+                                }
+                            } catch (_) {}
+                            nativeScanRafId = requestAnimationFrame(fastLoop);
+                        };
+                        nativeScanRafId = requestAnimationFrame(fastLoop);
+                    }
                 } else {
-                    hint.innerText = 'Không tải được bộ giải mã camera — hãy nhập hoặc quét mã vạch vào ô dưới:';
+                    hint.innerText = 'Không tải được bộ quét — nhập hoặc quét mã vào ô bên dưới:';
                     input.focus();
                 }
             } catch (_) {
-                hint.innerText = 'Không mở được camera hoặc chưa cấp quyền — hãy nhập/quét mã vào ô dưới:';
+                hint.innerText = 'Chưa mở được camera — hãy nhập hoặc quét mã vào ô bên dưới:';
                 input.focus();
             }
         }
 
         function closeBarcodeScanner() {
+            if (nativeScanRafId) {
+                cancelAnimationFrame(nativeScanRafId);
+                nativeScanRafId = null;
+            }
             if (zxingControls && typeof zxingControls.stop === 'function') {
                 try { zxingControls.stop(); } catch (_) {}
                 zxingControls = null;
@@ -644,9 +700,25 @@
             if (!code) return;
             closeBarcodeScanner();
 
+            if (scannerContext === 'product-form') {
+                document.getElementById('m-p-barcode').value = code;
+                document.getElementById('m-p-name').focus();
+                return;
+            }
+
             if (scannerContext === 'products') {
-                document.getElementById('m-prod-filter').value = code;
-                mRenderProducts();
+                const foundProd = products.find(p =>
+                    p.barcode === code ||
+                    (p.conversions && p.conversions.some(c => c.barcode === code))
+                );
+                if (foundProd) {
+                    document.getElementById('m-prod-filter').value = code;
+                    mRenderProducts();
+                } else {
+                    document.getElementById('m-prod-filter').value = '';
+                    mRenderProducts();
+                    openAddProductModal(code);
+                }
                 return;
             }
 
@@ -1039,16 +1111,19 @@
             `).join('');
         }
 
-        function openAddProductModal() {
+        function openAddProductModal(prefillBarcode = '') {
             document.getElementById('m-p-modal-title').innerText = 'Thêm Sản Phẩm Mới';
             document.getElementById('m-edit-pid').value = '';
-            document.getElementById('m-p-barcode').value = '';
+            document.getElementById('m-p-barcode').value = prefillBarcode || '';
             document.getElementById('m-p-name').value = '';
             document.getElementById('m-p-unit').value = 'Hộp';
             document.getElementById('m-p-cost').value = '';
             document.getElementById('m-p-price').value = '';
             document.getElementById('m-p-stock').value = '10';
             document.getElementById('m-product-modal').classList.remove('hidden');
+            setTimeout(() => {
+                if (prefillBarcode) document.getElementById('m-p-name').focus();
+            }, 80);
         }
 
         function closeAddProductModal() {
