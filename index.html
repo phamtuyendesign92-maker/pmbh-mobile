@@ -36,7 +36,7 @@
 </head>
 <body class="h-screen w-screen overflow-hidden flex flex-col select-none">
 
-    <!-- MÀN HÌNH ĐĂNG NHẬP CHI NHÁNH (Dùng chung khóa với PMBHPC.html) -->
+    <!-- MÀN HÌNH ĐĂNG NHẬP CHI NHÁNH -->
     <div id="login-screen" class="fixed inset-0 bg-blue-900/95 flex items-center justify-center z-50 p-4 hidden safe-top">
         <div class="bg-white rounded-3xl p-6 w-full max-w-[390px] shadow-2xl">
             <h2 class="text-xl font-bold text-blue-900 text-center">🏪 Đăng Nhập Chi Nhánh</h2>
@@ -327,7 +327,7 @@
         </button>
     </nav>
 
-    <!-- MODAL CHI TIẾT PHIÊN BẢN / ĐƠN VỊ QUY ĐỔI (GIỐNG ẢNH 4, 5, 6) -->
+    <!-- MODAL CHI TIẾT PHIÊN BẢN / ĐƠN VỊ QUY ĐỔI -->
     <div id="m-variant-detail-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-[55] p-4">
         <div class="bg-white rounded-2xl p-5 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl space-y-3.5 text-sm">
             <div class="flex justify-between items-center border-b pb-2.5">
@@ -458,7 +458,7 @@
         </div>
     </div>
 
-    <!-- MODAL QUÉT MÃ VẠCH SIÊU NHANH (NỔI TRÊN CÙNG Z-70) -->
+    <!-- MODAL QUÉT MÃ VẠCH SIÊU NHANH -->
     <div id="m-scanner-modal" class="fixed inset-0 bg-black/85 flex items-center justify-center hidden z-[70] p-4">
         <div class="bg-white rounded-2xl p-4 w-full max-w-md space-y-3 shadow-2xl">
             <div class="flex items-center justify-between border-b pb-2">
@@ -493,7 +493,7 @@
     </div>
 
     <script>
-        const CLOUD_DB_URL = "";
+        const CLOUD_DB_URL = "https://ban-hang-pos-default-rtdb.asia-southeast1.firebasedatabase.app";
 
         let currentStoreId = localStorage.getItem('pos_current_store') || '';
         let products = [];
@@ -504,6 +504,7 @@
         let selectedCustomer = null;
         let isUserModifiedCash = false;
         let activeOrderDebtId = null;
+        let isSyncingNow = false;
 
         let scannerContext = 'pos';
         let html5QrInstance = null;
@@ -520,6 +521,21 @@
                 qKey: `pos_sync_queue_${id}`,
                 tKey: `pos_last_sync_${id}`
             };
+        }
+
+        function updateMobileSyncLabel() {
+            const btn = document.getElementById('m-sync-btn');
+            if (!btn) return;
+            if (!navigator.onLine) {
+                btn.innerText = '🟡 Offline';
+                return;
+            }
+            if (!currentStoreId) {
+                btn.innerText = '🟢 Đồng bộ';
+                return;
+            }
+            const { qKey } = getStoreKeys(currentStoreId);
+            btn.innerText = localStorage.getItem(qKey) === '1' ? '🟡 Chờ sync' : '🟢 Đồng bộ';
         }
 
         function loadStoreData() {
@@ -546,53 +562,80 @@
 
             if (markDirtyForCloud) {
                 localStorage.setItem(qKey, '1');
+                const btn = document.getElementById('m-sync-btn');
+                if (btn) btn.innerText = '🟡 Đang sync';
                 if (navigator.onLine && CLOUD_DB_URL) {
                     pushToCloud();
+                } else {
+                    updateMobileSyncLabel();
                 }
             }
             refreshAllMobileUI();
-        }
-
-        async function syncWithCloud() {
-            const btn = document.getElementById('m-sync-btn');
-            if (!currentStoreId) return;
-            if (!navigator.onLine || !CLOUD_DB_URL) {
-                btn.innerText = navigator.onLine ? '🟢 Bản máy' : '🟡 Offline';
-                return;
-            }
-            const { qKey, tKey } = getStoreKeys(currentStoreId);
-            const isDirty = localStorage.getItem(qKey) === '1';
-            const localTs = Number(localStorage.getItem(tKey) || 0);
-
-            try {
-                if (isDirty) {
-                    await pushToCloud();
-                } else {
-                    const res = await fetch(`${CLOUD_DB_URL}/stores/${currentStoreId}.json`);
-                    const remote = await res.json();
-                    if (remote && (remote.updatedAt || 0) > localTs) {
-                        products = remote.products || products;
-                        customers = remote.customers || customers;
-                        orders = remote.orders || orders;
-                        saveData(false);
-                    }
-                }
-                btn.innerText = '🟢 Đồng bộ';
-            } catch (e) {
-                btn.innerText = '🟡 Chờ mạng';
-            }
         }
 
         async function pushToCloud() {
             if (!currentStoreId || !navigator.onLine || !CLOUD_DB_URL) return;
             const { qKey, tKey } = getStoreKeys(currentStoreId);
             const updatedAt = Number(localStorage.getItem(tKey) || Date.now());
-            await fetch(`${CLOUD_DB_URL}/stores/${currentStoreId}.json`, {
+            const baseUrl = CLOUD_DB_URL.replace(/\/+$/, '');
+            const res = await fetch(`${baseUrl}/stores/${encodeURIComponent(currentStoreId)}.json`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ products, customers, orders, updatedAt })
             });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
             localStorage.removeItem(qKey);
+            updateMobileSyncLabel();
+        }
+
+        async function syncWithCloud() {
+            if (!currentStoreId || isSyncingNow) return;
+            if (!navigator.onLine || !CLOUD_DB_URL) {
+                updateMobileSyncLabel();
+                return;
+            }
+            isSyncingNow = true;
+            const { qKey, tKey } = getStoreKeys(currentStoreId);
+            const isDirty = localStorage.getItem(qKey) === '1';
+            const localTs = Number(localStorage.getItem(tKey) || 0);
+            const baseUrl = CLOUD_DB_URL.replace(/\/+$/, '');
+
+            try {
+                if (isDirty) {
+                    await pushToCloud();
+                } else {
+                    const res = await fetch(`${baseUrl}/stores/${encodeURIComponent(currentStoreId)}.json?t=${Date.now()}`, {
+                        cache: 'no-store'
+                    });
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    const remote = await res.json();
+                    const remoteTs = Number((remote && remote.updatedAt) || 0);
+
+                    if (remote && remoteTs > localTs) {
+                        products = Array.isArray(remote.products) ? remote.products : products;
+                        customers = Array.isArray(remote.customers) ? remote.customers : customers;
+                        orders = Array.isArray(remote.orders) ? remote.orders : orders;
+
+                        const { pKey, cKey, oKey } = getStoreKeys(currentStoreId);
+                        localStorage.setItem(pKey, JSON.stringify(products));
+                        localStorage.setItem(cKey, JSON.stringify(customers));
+                        localStorage.setItem(oKey, JSON.stringify(orders));
+                        localStorage.setItem(tKey, String(remoteTs));
+                        localStorage.removeItem(qKey);
+
+                        renderCustomerSelect();
+                        mRenderCart();
+                        refreshAllMobileUI();
+                    } else if (!remote && (products.length > 0 || customers.length > 0 || orders.length > 0)) {
+                        await pushToCloud();
+                    }
+                    updateMobileSyncLabel();
+                }
+            } catch (e) {
+                updateMobileSyncLabel();
+            } finally {
+                isSyncingNow = false;
+            }
         }
 
         function manualSync() {
@@ -602,7 +645,9 @@
 
         window.addEventListener('online', () => { syncWithCloud(); refreshAllMobileUI(); });
         window.addEventListener('offline', () => { refreshAllMobileUI(); });
-        setInterval(() => { if (currentStoreId) syncWithCloud(); }, 20000);
+        window.addEventListener('focus', () => { if (currentStoreId) syncWithCloud(); });
+        document.addEventListener('visibilitychange', () => { if (!document.hidden && currentStoreId) syncWithCloud(); });
+        setInterval(() => { if (currentStoreId) syncWithCloud(); }, 5000);
 
         window.onload = function() {
             if (!currentStoreId) {
@@ -651,14 +696,20 @@
             if (tab === 'pos') { renderCustomerSelect(); mRenderCart(); }
             if (tab === 'products') mRenderProducts();
             if (tab === 'more') { mRenderCustomers(); mLoadReport('today'); }
+            if (currentStoreId) syncWithCloud();
         }
 
         function refreshAllMobileUI() {
+            updateMobileSyncLabel();
             renderOverview();
             mRenderOrders();
             mRenderProducts();
             mRenderCustomers();
-            mLoadReport('today');
+            const activeRep = ['today', 'month', 'all'].find(t => {
+                const b = document.getElementById(`m-rep-${t}`);
+                return b && b.className.includes('bg-blue-600');
+            });
+            mLoadReport(activeRep || 'today');
         }
 
         // ============================================================
