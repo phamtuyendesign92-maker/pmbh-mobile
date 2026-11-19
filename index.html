@@ -329,7 +329,7 @@
 
     <!-- MODAL THÊM / SỬA SẢN PHẨM -->
     <div id="m-product-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50 p-4">
-        <div class="bg-white rounded-2xl p-5 w-full max-w-md max-h-[88vh] overflow-y-auto shadow-2xl">
+        <div class="bg-white rounded-2xl p-5 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
             <h3 id="m-p-modal-title" class="text-base font-bold mb-3">Thêm Sản Phẩm Mới</h3>
             <form onsubmit="mSaveProduct(event)" class="space-y-2.5 text-sm">
                 <input type="hidden" id="m-edit-pid">
@@ -346,7 +346,19 @@
                     <input type="number" id="m-p-cost" placeholder="Giá vốn" required class="p-2.5 border rounded-xl">
                     <input type="number" id="m-p-price" placeholder="Giá bán" required class="p-2.5 border rounded-xl">
                 </div>
-                <input type="number" id="m-p-stock" placeholder="Tồn kho" value="10" required class="w-full p-2.5 border rounded-xl">
+                <input type="number" id="m-p-stock" placeholder="Tồn kho (tính theo ĐV gốc)" value="10" required class="w-full p-2.5 border rounded-xl">
+
+                <!-- ĐƠN VỊ QUY ĐỔI -->
+                <div class="border-t pt-2.5 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-700 uppercase tracking-wide">Đơn vị quy đổi</span>
+                        <button type="button" onclick="addConversionRow()" class="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold active:scale-95">
+                            + Thêm đơn vị quy đổi
+                        </button>
+                    </div>
+                    <div id="m-conversions-list" class="space-y-2"></div>
+                </div>
+
                 <div class="flex gap-2 pt-2">
                     <button type="button" onclick="closeAddProductModal()" class="flex-1 py-2.5 bg-slate-200 rounded-xl font-bold">Hủy</button>
                     <button type="submit" class="flex-1 py-2.5 bg-blue-600 text-white rounded-xl font-bold">Lưu</button>
@@ -666,7 +678,6 @@
                         const code = (decodedText || '').trim();
                         if (!code) return;
 
-                        // Khớp 2 lần liên tiếp cùng 1 mã để chống đọc nhầm ký tự/vỏ chai
                         if (code === lastCandidateCode) {
                             candidateCount += 1;
                         } else {
@@ -687,7 +698,6 @@
 
                 hint.innerText = 'Đưa mã vạch vào khung xanh ở giữa để nhận ngay!';
 
-                // Kiểm tra hỗ trợ Flash & Zoom trên camera đang mở
                 try {
                     const caps = html5QrInstance.getRunningTrackCameraCapabilities();
                     if (caps && caps.torchFeature && caps.torchFeature().isSupported()) {
@@ -1138,24 +1148,73 @@
         }
 
         // ============================================================
-        // SẢN PHẨM & KHO
+        // SẢN PHẨM, ĐƠN VỊ QUY ĐỔI & KHO
         // ============================================================
+        function addConversionRow(data = {}) {
+            const list = document.getElementById('m-conversions-list');
+            const row = document.createElement('div');
+            row.className = 'm-conv-row bg-slate-50 border border-slate-200 rounded-xl p-2.5 space-y-2';
+            row.innerHTML = `
+                <div class="flex items-center justify-between gap-2">
+                    <input type="text" placeholder="ĐV quy đổi (VD: Vỉ, Thùng)" value="${data.unit || ''}" required
+                        class="m-conv-unit flex-1 p-2 border rounded-lg bg-white text-xs font-semibold">
+                    <div class="flex items-center gap-1">
+                        <span class="text-[11px] text-slate-500">SL quy đổi:</span>
+                        <input type="number" min="1" placeholder="SL" value="${data.qty || 1}" required
+                            class="m-conv-qty w-16 p-2 border rounded-lg bg-white text-xs font-bold text-center">
+                    </div>
+                    <button type="button" onclick="this.closest('.m-conv-row').remove()"
+                        class="px-2 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-bold">Xóa</button>
+                </div>
+                <div class="grid grid-cols-3 gap-1.5">
+                    <input type="text" placeholder="Mã vạch riêng" value="${data.barcode || ''}"
+                        class="m-conv-barcode p-2 border rounded-lg bg-white text-xs font-mono">
+                    <input type="number" placeholder="Giá vốn" value="${data.cost ?? ''}" required
+                        class="m-conv-cost p-2 border rounded-lg bg-white text-xs">
+                    <input type="number" placeholder="Giá bán" value="${data.price ?? ''}" required
+                        class="m-conv-price p-2 border rounded-lg bg-white text-xs">
+                </div>
+            `;
+            list.appendChild(row);
+        }
+
+        function mDeleteConversion(prodId, convIdx) {
+            const p = products.find(x => x.id === prodId);
+            if (!p || !Array.isArray(p.conversions) || !p.conversions[convIdx]) return;
+            const conv = p.conversions[convIdx];
+            if (confirm(`Xóa đơn vị quy đổi "${conv.unit}" của sản phẩm "${p.name}"?`)) {
+                p.conversions.splice(convIdx, 1);
+                saveData(true);
+            }
+        }
+
         function mRenderProducts() {
             const q = (document.getElementById('m-prod-filter').value || '').trim().toLowerCase();
             const list = products.filter(p => !q || p.name.toLowerCase().includes(q) || (p.barcode || '').toLowerCase().includes(q));
-            document.getElementById('m-products-list').innerHTML = list.map(p => `
-                <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100 flex justify-between items-center">
-                    <div>
-                        <div class="font-bold text-sm text-slate-800">${p.name}</div>
-                        <div class="text-xs text-slate-500">Mã: <span class="font-mono">${p.barcode || '-'}</span> • Tồn: <b class="${p.stock <= 0 ? 'text-red-600' : 'text-slate-800'}">${p.stock}</b> ${p.unit}</div>
-                        <div class="text-xs font-bold text-blue-600 mt-0.5">Giá bán: ${Number(p.price).toLocaleString()} đ</div>
+            document.getElementById('m-products-list').innerHTML = list.map(p => {
+                const convBadges = (p.conversions && p.conversions.length > 0)
+                    ? `<div class="flex flex-wrap gap-1.5 mt-1.5">${p.conversions.map((c, idx) => `
+                        <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-lg text-[11px] font-semibold">
+                            <span>${c.unit} (${c.qty}) • ${Number(c.price || 0).toLocaleString()}đ</span>
+                            <button type="button" onclick="mDeleteConversion(${p.id}, ${idx})" title="Xóa đơn vị quy đổi" class="text-red-600 font-bold hover:text-red-800 px-0.5">&times;</button>
+                        </span>
+                    `).join('')}</div>`
+                    : '';
+                return `
+                    <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100 flex justify-between items-start gap-2">
+                        <div class="min-w-0 flex-1">
+                            <div class="font-bold text-sm text-slate-800">${p.name}</div>
+                            <div class="text-xs text-slate-500">Mã: <span class="font-mono">${p.barcode || '-'}</span> • Tồn: <b class="${p.stock <= 0 ? 'text-red-600' : 'text-slate-800'}">${p.stock}</b> ${p.unit}</div>
+                            <div class="text-xs font-bold text-blue-600 mt-0.5">Giá bán: ${Number(p.price).toLocaleString()} đ</div>
+                            ${convBadges}
+                        </div>
+                        <div class="flex gap-2 shrink-0">
+                            <button onclick="mEditProduct(${p.id})" class="px-2.5 py-1.5 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold">Sửa</button>
+                            <button onclick="mDeleteProduct(${p.id})" class="px-2.5 py-1.5 bg-red-50 text-red-600 rounded-xl text-xs font-bold">Xóa</button>
+                        </div>
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick="mEditProduct(${p.id})" class="px-2.5 py-1.5 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold">Sửa</button>
-                        <button onclick="mDeleteProduct(${p.id})" class="px-2.5 py-1.5 bg-red-50 text-red-600 rounded-xl text-xs font-bold">Xóa</button>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function openAddProductModal(prefillBarcode = '') {
@@ -1167,6 +1226,7 @@
             document.getElementById('m-p-cost').value = '';
             document.getElementById('m-p-price').value = '';
             document.getElementById('m-p-stock').value = '10';
+            document.getElementById('m-conversions-list').innerHTML = '';
             document.getElementById('m-product-modal').classList.remove('hidden');
             setTimeout(() => {
                 if (prefillBarcode) document.getElementById('m-p-name').focus();
@@ -1188,6 +1248,8 @@
             document.getElementById('m-p-cost').value = String(p.cost || 0);
             document.getElementById('m-p-price').value = String(p.price || 0);
             document.getElementById('m-p-stock').value = String(p.stock || 0);
+            document.getElementById('m-conversions-list').innerHTML = '';
+            (p.conversions || []).forEach(c => addConversionRow(c));
             document.getElementById('m-product-modal').classList.remove('hidden');
         }
 
@@ -1201,11 +1263,19 @@
             const price = parseFloat(document.getElementById('m-p-price').value) || 0;
             const stock = parseInt(document.getElementById('m-p-stock').value) || 0;
 
+            const conversions = Array.from(document.querySelectorAll('#m-conversions-list .m-conv-row')).map(row => ({
+                unit: row.querySelector('.m-conv-unit').value.trim(),
+                qty: Math.max(1, parseInt(row.querySelector('.m-conv-qty').value) || 1),
+                barcode: row.querySelector('.m-conv-barcode').value.trim(),
+                cost: parseFloat(row.querySelector('.m-conv-cost').value) || 0,
+                price: parseFloat(row.querySelector('.m-conv-price').value) || 0
+            })).filter(c => c.unit);
+
             if (editId) {
                 const p = products.find(x => String(x.id) === String(editId));
-                if (p) Object.assign(p, { barcode, name, unit, cost, price, stock });
+                if (p) Object.assign(p, { barcode, name, unit, cost, price, stock, conversions });
             } else {
-                products.push({ id: Date.now(), barcode, name, unit, cost, price, stock, conversions: [] });
+                products.push({ id: Date.now(), barcode, name, unit, cost, price, stock, conversions });
             }
             saveData(true);
             closeAddProductModal();
