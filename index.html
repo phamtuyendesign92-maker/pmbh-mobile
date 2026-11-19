@@ -99,7 +99,7 @@
                             <div class="text-xs text-slate-500">Đơn hàng mới</div>
                             <div id="m-today-orders" class="text-base font-bold text-slate-800 mt-0.5">0</div>
                         </div>
-                        <div onclick="switchTab('customers')" class="cursor-pointer border-x border-slate-100">
+                        <div onclick="switchTab('more')" class="cursor-pointer border-x border-slate-100">
                             <div class="text-xs text-slate-500">Khách nợ</div>
                             <div id="m-debt-customers" class="text-base font-bold text-red-600 mt-0.5">0</div>
                         </div>
@@ -139,7 +139,7 @@
                         <div class="w-11 h-11 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xl">👤</div>
                         <span class="text-[11px] font-medium text-slate-700 leading-tight">Thêm<br>khách hàng</span>
                     </button>
-                    <button onclick="switchTab('customers')" class="flex flex-col items-center gap-1.5 active:scale-95">
+                    <button onclick="switchTab('more')" class="flex flex-col items-center gap-1.5 active:scale-95">
                         <div class="w-11 h-11 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center text-xl">💳</div>
                         <span class="text-[11px] font-medium text-slate-700 leading-tight">Sổ<br>công nợ</span>
                     </button>
@@ -157,7 +157,7 @@
                     <button onclick="switchTab('orders')" class="text-xs font-semibold text-slate-500">Tất cả ▾</button>
                 </div>
                 <div class="bg-white rounded-2xl divide-y divide-slate-100 shadow-sm border border-slate-100">
-                    <div onclick="switchTab('customers')" class="flex items-center justify-between p-3.5 cursor-pointer active:bg-slate-50">
+                    <div onclick="switchTab('more')" class="flex items-center justify-between p-3.5 cursor-pointer active:bg-slate-50">
                         <div class="flex items-center gap-3">
                             <span class="text-lg">📌</span>
                             <span class="text-sm font-medium text-slate-700">Tổng công nợ khách hàng</span>
@@ -251,7 +251,7 @@
         <section id="panel-products" class="tab-panel absolute inset-0 flex-col bg-slate-100 safe-bottom">
             <div class="bg-white safe-top px-3 pb-3 border-b space-y-2 sticky top-0 z-10">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-base font-bold text-slate-800">📦 Sản Phẩm & Kho</h2>
+                    <h2 class="text-base font-bold text-slate-800">📦 Quản Lý Kho</h2>
                     <button onclick="openAddProductModal()" class="px-3 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-bold active:scale-95">+ Thêm sản phẩm</button>
                 </div>
                 <div class="flex items-center gap-1.5">
@@ -327,6 +327,41 @@
         </button>
     </nav>
 
+    <!-- MODAL CHI TIẾT PHIÊN BẢN / ĐƠN VỊ QUY ĐỔI (GIỐNG ẢNH 4, 5, 6) -->
+    <div id="m-variant-detail-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-[55] p-4">
+        <div class="bg-white rounded-2xl p-5 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl space-y-3.5 text-sm">
+            <div class="flex justify-between items-center border-b pb-2.5">
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="closeVariantDetailModal()" class="text-lg font-bold text-slate-500 px-1">&larr;</button>
+                    <h3 class="font-bold text-base text-slate-800">Chi tiết phiên bản</h3>
+                </div>
+                <button type="button" id="m-vd-edit-btn" class="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold">Sửa</button>
+            </div>
+
+            <div id="m-vd-info" class="bg-slate-50 rounded-xl p-3 space-y-1.5 text-xs"></div>
+
+            <div id="m-vd-price-box" class="bg-white border border-slate-200 rounded-xl p-3 space-y-1.5 text-xs"></div>
+
+            <div id="m-vd-stock-box" class="bg-white border border-slate-200 rounded-xl p-3 flex justify-between items-center text-xs"></div>
+
+            <div id="m-vd-conversions-section" class="bg-white border border-slate-200 rounded-xl p-3 space-y-2 hidden">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-800">Đơn vị quy đổi</span>
+                    <button type="button" id="m-vd-add-conv-btn" class="w-6 h-6 rounded-full bg-blue-50 text-blue-600 font-bold text-sm flex items-center justify-center">+</button>
+                </div>
+                <div id="m-vd-conversions-list" class="space-y-2"></div>
+            </div>
+
+            <div id="m-vd-delete-box" class="pt-1 hidden">
+                <button type="button" id="m-vd-delete-btn" class="w-full py-2.5 border border-red-300 text-red-600 bg-red-50/50 rounded-xl font-bold text-xs">
+                    Xóa đơn vị quy đổi
+                </button>
+            </div>
+
+            <button type="button" onclick="closeVariantDetailModal()" class="w-full py-2.5 bg-blue-600 text-white rounded-xl font-bold">Đóng</button>
+        </div>
+    </div>
+
     <!-- MODAL THÊM / SỬA SẢN PHẨM -->
     <div id="m-product-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50 p-4">
         <div class="bg-white rounded-2xl p-5 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
@@ -348,7 +383,7 @@
                 </div>
                 <input type="number" id="m-p-stock" placeholder="Tồn kho (tính theo ĐV gốc)" value="10" required class="w-full p-2.5 border rounded-xl">
 
-                <!-- ĐƠN VỊ QUY ĐỔI -->
+                <!-- ĐƠN VỊ QUY ĐỔI (Cho phép nhập nhiều chữ số tự do, không tự ngắt khi đang gõ) -->
                 <div class="border-t pt-2.5 space-y-2">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-slate-700 uppercase tracking-wide">Đơn vị quy đổi</span>
@@ -364,6 +399,25 @@
                     <button type="submit" class="flex-1 py-2.5 bg-blue-600 text-white rounded-xl font-bold">Lưu</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL CHI TIẾT KHÁCH HÀNG & LỊCH SỬ ĐƠN HÀNG ĐÃ MUA -->
+    <div id="m-customer-detail-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white rounded-2xl p-5 w-full max-w-md max-h-[88vh] overflow-y-auto shadow-2xl space-y-3 text-sm">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 id="m-cd-title" class="font-bold text-base text-slate-800">Thông Tin Khách Hàng</h3>
+                <button type="button" onclick="document.getElementById('m-customer-detail-modal').classList.add('hidden')" class="text-xl font-bold text-slate-400">&times;</button>
+            </div>
+            <div id="m-cd-info" class="bg-slate-50 rounded-xl p-3 text-xs space-y-1"></div>
+            <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-700 uppercase">Đơn hàng đã mua</span>
+                    <span id="m-cd-orders-count" class="text-xs text-slate-500">0 đơn</span>
+                </div>
+                <div id="m-cd-orders-list" class="divide-y border rounded-xl px-2.5 max-h-60 overflow-y-auto"></div>
+            </div>
+            <button type="button" onclick="document.getElementById('m-customer-detail-modal').classList.add('hidden')" class="w-full py-2.5 bg-blue-600 text-white rounded-xl font-bold">Đóng</button>
         </div>
     </div>
 
@@ -384,7 +438,7 @@
     </div>
 
     <!-- MODAL CHI TIẾT ĐƠN HÀNG & TRẢ NỢ -->
-    <div id="m-order-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50 p-4">
+    <div id="m-order-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-[60] p-4">
         <div class="bg-white rounded-2xl p-5 w-full max-w-md max-h-[88vh] overflow-y-auto shadow-2xl space-y-3 text-sm">
             <div class="flex justify-between items-center border-b pb-2">
                 <h3 id="m-od-title" class="font-bold text-base">Chi Tiết Đơn</h3>
@@ -415,7 +469,6 @@
                 </div>
             </div>
 
-            <!-- Khung camera cắt vùng quét giữa giống Sapo -->
             <div class="relative w-full h-56 bg-slate-900 rounded-xl overflow-hidden">
                 <div id="m-reader" class="w-full h-full"></div>
                 <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
@@ -423,7 +476,6 @@
                 </div>
             </div>
 
-            <!-- Thanh Zoom nếu camera hỗ trợ -->
             <div id="m-zoom-box" class="hidden flex items-center gap-2 text-xs text-slate-500">
                 <span>🔍 Zoom:</span>
                 <input type="range" id="m-zoom-slider" min="1" max="3" step="0.1" value="1" oninput="setScannerZoom(this.value)" class="flex-1">
@@ -453,7 +505,6 @@
         let isUserModifiedCash = false;
         let activeOrderDebtId = null;
 
-        // Biến hỗ trợ quét mã vạch html5-qrcode (ZBar WebAssembly siêu nhanh + xác nhận 2 lần chống đọc nhầm)
         let scannerContext = 'pos';
         let html5QrInstance = null;
         let lastCandidateCode = '';
@@ -1040,6 +1091,7 @@
                 orderId,
                 date: now.toLocaleString(),
                 timestamp: now.getTime(),
+                customerId: cust ? cust.id : 1,
                 customerName: cust ? cust.name : 'Khách lẻ',
                 customerPhone: cust ? cust.phone : 'Không có',
                 items: cart.map(({ prodRef, ...rest }) => rest),
@@ -1086,7 +1138,7 @@
                 return;
             }
             box.innerHTML = orders.slice().reverse().map(o => `
-                <div onclick="mShowOrderDetail('${o.orderId}')" class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100 flex justify-between items-center active:bg-slate-50">
+                <div onclick="mShowOrderDetail('${o.orderId}')" class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100 flex justify-between items-center active:bg-slate-50 cursor-pointer">
                     <div>
                         <div class="font-bold text-sm text-blue-600">${o.orderId}</div>
                         <div class="text-xs text-slate-700 font-medium">${o.customerName} • ${o.paymentMethod || 'Tiền mặt'}</div>
@@ -1141,14 +1193,14 @@
             o.paidAmount = (o.paidAmount || 0) + amt;
             o.debtAmount -= amt;
             o.profit = (o.profit || 0) + amt;
-            const c = customers.find(x => x.name === o.customerName);
+            const c = customers.find(x => (o.customerId && x.id === o.customerId) || x.name === o.customerName);
             if (c) c.debt = Math.max(0, (c.debt || 0) - amt);
             saveData(true);
             mShowOrderDetail(o.orderId);
         }
 
         // ============================================================
-        // SẢN PHẨM, ĐƠN VỊ QUY ĐỔI & KHO
+        // SẢN PHẨM, CHI TIẾT PHIÊN BẢN & ĐƠN VỊ QUY ĐỔI
         // ============================================================
         function addConversionRow(data = {}) {
             const list = document.getElementById('m-conversions-list');
@@ -1156,11 +1208,11 @@
             row.className = 'm-conv-row bg-slate-50 border border-slate-200 rounded-xl p-2.5 space-y-2';
             row.innerHTML = `
                 <div class="flex items-center justify-between gap-2">
-                    <input type="text" placeholder="ĐV quy đổi (VD: Vỉ, Thùng)" value="${data.unit || ''}" required
+                    <input type="text" placeholder="ĐV quy đổi (VD: Vỉ, Lốc)" value="${data.unit || ''}" required
                         class="m-conv-unit flex-1 p-2 border rounded-lg bg-white text-xs font-semibold">
                     <div class="flex items-center gap-1">
-                        <span class="text-[11px] text-slate-500">SL quy đổi:</span>
-                        <input type="number" min="1" placeholder="SL" value="${data.qty || 1}" required
+                        <span class="text-[11px] text-slate-500 whitespace-nowrap">SL quy đổi:</span>
+                        <input type="number" min="1" step="any" placeholder="SL" value="${data.qty ?? ''}" required
                             class="m-conv-qty w-16 p-2 border rounded-lg bg-white text-xs font-bold text-center">
                     </div>
                     <button type="button" onclick="this.closest('.m-conv-row').remove()"
@@ -1169,52 +1221,178 @@
                 <div class="grid grid-cols-3 gap-1.5">
                     <input type="text" placeholder="Mã vạch riêng" value="${data.barcode || ''}"
                         class="m-conv-barcode p-2 border rounded-lg bg-white text-xs font-mono">
-                    <input type="number" placeholder="Giá vốn" value="${data.cost ?? ''}" required
+                    <input type="number" step="any" placeholder="Giá vốn" value="${data.cost ?? ''}" required
                         class="m-conv-cost p-2 border rounded-lg bg-white text-xs">
-                    <input type="number" placeholder="Giá bán" value="${data.price ?? ''}" required
+                    <input type="number" step="any" placeholder="Giá bán" value="${data.price ?? ''}" required
                         class="m-conv-price p-2 border rounded-lg bg-white text-xs">
                 </div>
             `;
             list.appendChild(row);
         }
 
-        function mDeleteConversion(prodId, convIdx) {
-            const p = products.find(x => x.id === prodId);
-            if (!p || !Array.isArray(p.conversions) || !p.conversions[convIdx]) return;
-            const conv = p.conversions[convIdx];
-            if (confirm(`Xóa đơn vị quy đổi "${conv.unit}" của sản phẩm "${p.name}"?`)) {
-                p.conversions.splice(convIdx, 1);
-                saveData(true);
-            }
-        }
-
         function mRenderProducts() {
             const q = (document.getElementById('m-prod-filter').value || '').trim().toLowerCase();
-            const list = products.filter(p => !q || p.name.toLowerCase().includes(q) || (p.barcode || '').toLowerCase().includes(q));
-            document.getElementById('m-products-list').innerHTML = list.map(p => {
-                const convBadges = (p.conversions && p.conversions.length > 0)
-                    ? `<div class="flex flex-wrap gap-1.5 mt-1.5">${p.conversions.map((c, idx) => `
-                        <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-lg text-[11px] font-semibold">
-                            <span>${c.unit} (${c.qty}) • ${Number(c.price || 0).toLocaleString()}đ</span>
-                            <button type="button" onclick="mDeleteConversion(${p.id}, ${idx})" title="Xóa đơn vị quy đổi" class="text-red-600 font-bold hover:text-red-800 px-0.5">&times;</button>
-                        </span>
-                    `).join('')}</div>`
-                    : '';
+            const rows = [];
+
+            products.forEach(p => {
+                const baseBarcode = (p.barcode || '').toLowerCase();
+                const matchBase = !q || p.name.toLowerCase().includes(q) || baseBarcode.includes(q);
+                if (matchBase) {
+                    rows.push({
+                        type: 'base',
+                        prodId: p.id,
+                        title: p.name,
+                        sub: `Mã: ${p.barcode || '-'} • ĐV: ${p.unit}`,
+                        stockText: `${Number(p.stock || 0).toLocaleString()} ${p.unit}`,
+                        price: Number(p.price || 0)
+                    });
+                }
+
+                (p.conversions || []).forEach((c, idx) => {
+                    const convTitle = `${p.name} - ${c.unit}`;
+                    const convBarcode = (c.barcode || '').toLowerCase();
+                    const matchConv = !q || convTitle.toLowerCase().includes(q) || p.name.toLowerCase().includes(q) || convBarcode.includes(q);
+                    if (matchConv) {
+                        const qty = Math.max(0.0001, Number(c.qty) || 1);
+                        const convStock = Math.floor((Number(p.stock || 0) / qty) * 1000) / 1000;
+                        rows.push({
+                            type: 'conv',
+                            prodId: p.id,
+                            convIdx: idx,
+                            title: convTitle,
+                            sub: `Mã: ${c.barcode || p.barcode || '-'} • Quy đổi: ${c.qty} ${p.unit}`,
+                            stockText: `${convStock.toLocaleString()} ${c.unit}`,
+                            price: Number(c.price || 0)
+                        });
+                    }
+                });
+            });
+
+            const listEl = document.getElementById('m-products-list');
+            if (rows.length === 0) {
+                listEl.innerHTML = `<div class="text-center py-12 text-slate-400 text-xs">Không có sản phẩm phù hợp.</div>`;
+                return;
+            }
+
+            listEl.innerHTML = rows.map(r => {
+                const onClickFn = r.type === 'base'
+                    ? `openVariantDetail(${r.prodId}, null)`
+                    : `openVariantDetail(${r.prodId}, ${r.convIdx})`;
                 return `
-                    <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100 flex justify-between items-start gap-2">
+                    <div onclick="${onClickFn}" class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100 flex justify-between items-center gap-2 active:bg-blue-50/50 cursor-pointer">
                         <div class="min-w-0 flex-1">
-                            <div class="font-bold text-sm text-slate-800">${p.name}</div>
-                            <div class="text-xs text-slate-500">Mã: <span class="font-mono">${p.barcode || '-'}</span> • Tồn: <b class="${p.stock <= 0 ? 'text-red-600' : 'text-slate-800'}">${p.stock}</b> ${p.unit}</div>
-                            <div class="text-xs font-bold text-blue-600 mt-0.5">Giá bán: ${Number(p.price).toLocaleString()} đ</div>
-                            ${convBadges}
+                            <div class="font-bold text-sm text-slate-800 truncate">${r.title}</div>
+                            <div class="text-xs text-slate-500 truncate">${r.sub}</div>
                         </div>
-                        <div class="flex gap-2 shrink-0">
-                            <button onclick="mEditProduct(${p.id})" class="px-2.5 py-1.5 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold">Sửa</button>
-                            <button onclick="mDeleteProduct(${p.id})" class="px-2.5 py-1.5 bg-red-50 text-red-600 rounded-xl text-xs font-bold">Xóa</button>
+                        <div class="text-right shrink-0">
+                            <div class="text-sm font-extrabold text-slate-800">${r.price.toLocaleString()} đ</div>
+                            <div class="text-xs font-bold ${Number(r.stockText.split(' ')[0]) <= 0 ? 'text-red-600' : 'text-emerald-600'}">${r.stockText}</div>
                         </div>
                     </div>
                 `;
             }).join('');
+        }
+
+        function openVariantDetail(prodId, convIdx = null) {
+            const p = products.find(x => x.id === prodId);
+            if (!p) return;
+
+            const isConv = convIdx !== null && Array.isArray(p.conversions) && p.conversions[convIdx];
+            const conv = isConv ? p.conversions[convIdx] : null;
+
+            const titleName = isConv ? `${p.name} - ${conv.unit}` : p.name;
+            const barcodeVal = isConv ? (conv.barcode || p.barcode || '-') : (p.barcode || '-');
+            const unitVal = isConv ? conv.unit : p.unit;
+            const costVal = isConv ? Number(conv.cost || 0) : Number(p.cost || 0);
+            const priceVal = isConv ? Number(conv.price || 0) : Number(p.price || 0);
+
+            const qty = isConv ? Math.max(0.0001, Number(conv.qty) || 1) : 1;
+            const stockVal = isConv
+                ? Math.floor((Number(p.stock || 0) / qty) * 1000) / 1000
+                : Number(p.stock || 0);
+
+            document.getElementById('m-vd-info').innerHTML = `
+                <div class="font-bold text-sm text-slate-800">${titleName}</div>
+                <div class="flex justify-between text-slate-600"><span>Mã vạch</span><span class="font-mono font-semibold text-slate-800">${barcodeVal}</span></div>
+                <div class="flex justify-between text-slate-600"><span>Đơn vị tính</span><span class="font-semibold text-slate-800">${unitVal}</span></div>
+                ${isConv ? `<div class="flex justify-between text-slate-600"><span>Số lượng quy đổi</span><span class="font-semibold text-blue-600">${conv.qty} ${p.unit}</span></div>` : ''}
+            `;
+
+            document.getElementById('m-vd-price-box').innerHTML = `
+                <div class="font-bold text-slate-700 mb-1">Giá sản phẩm</div>
+                <div class="flex justify-between"><span class="text-slate-500">Giá bán</span><span class="font-bold text-blue-600">${priceVal.toLocaleString()} đ</span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Giá vốn</span><span class="font-bold text-slate-700">${costVal.toLocaleString()} đ</span></div>
+            `;
+
+            document.getElementById('m-vd-stock-box').innerHTML = `
+                <div>
+                    <div class="font-bold text-slate-800">${currentStoreId || 'Chi nhánh mặc định'}</div>
+                    <div class="text-[11px] text-slate-400">Tồn kho hiện tại</div>
+                </div>
+                <div class="text-sm font-extrabold ${stockVal <= 0 ? 'text-red-600' : 'text-emerald-600'}">${stockVal.toLocaleString()} ${unitVal}</div>
+            `;
+
+            const convSection = document.getElementById('m-vd-conversions-section');
+            const convList = document.getElementById('m-vd-conversions-list');
+            if (!isConv) {
+                convSection.classList.remove('hidden');
+                if (!p.conversions || p.conversions.length === 0) {
+                    convList.innerHTML = `<div class="text-xs text-slate-400">Chưa có đơn vị quy đổi.</div>`;
+                } else {
+                    convList.innerHTML = p.conversions.map((c, idx) => {
+                        const qConv = Math.max(0.0001, Number(c.qty) || 1);
+                        const sConv = Math.floor((Number(p.stock || 0) / qConv) * 1000) / 1000;
+                        return `
+                            <div onclick="openVariantDetail(${p.id}, ${idx})" class="p-2.5 rounded-xl bg-slate-50 border flex justify-between items-center cursor-pointer active:bg-blue-50">
+                                <div>
+                                    <div class="font-bold text-xs text-slate-800">${c.unit}</div>
+                                    <div class="text-[11px] text-slate-500">Quy đổi: ${c.qty} ${p.unit}</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs font-bold text-blue-600">${Number(c.price || 0).toLocaleString()} đ</div>
+                                    <div class="text-[11px] text-slate-500">Tồn: ${sConv.toLocaleString()}</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } else {
+                convSection.classList.add('hidden');
+            }
+
+            const editBtn = document.getElementById('m-vd-edit-btn');
+            editBtn.onclick = () => {
+                closeVariantDetailModal();
+                mEditProduct(p.id);
+            };
+
+            const addConvBtn = document.getElementById('m-vd-add-conv-btn');
+            addConvBtn.onclick = () => {
+                closeVariantDetailModal();
+                mEditProduct(p.id, true);
+            };
+
+            const delBox = document.getElementById('m-vd-delete-box');
+            const delBtn = document.getElementById('m-vd-delete-btn');
+            if (isConv) {
+                delBox.classList.remove('hidden');
+                delBtn.innerText = `Xóa đơn vị quy đổi "${conv.unit}"`;
+                delBtn.onclick = () => {
+                    if (confirm(`Xóa đơn vị quy đổi "${conv.unit}" của sản phẩm "${p.name}"?`)) {
+                        p.conversions.splice(convIdx, 1);
+                        saveData(true);
+                        closeVariantDetailModal();
+                    }
+                };
+            } else {
+                delBox.classList.add('hidden');
+            }
+
+            document.getElementById('m-variant-detail-modal').classList.remove('hidden');
+        }
+
+        function closeVariantDetailModal() {
+            document.getElementById('m-variant-detail-modal').classList.add('hidden');
         }
 
         function openAddProductModal(prefillBarcode = '') {
@@ -1237,7 +1415,7 @@
             document.getElementById('m-product-modal').classList.add('hidden');
         }
 
-        function mEditProduct(id) {
+        function mEditProduct(id, focusNewConversion = false) {
             const p = products.find(x => x.id === id);
             if (!p) return;
             document.getElementById('m-p-modal-title').innerText = 'Sửa Sản Phẩm';
@@ -1250,6 +1428,7 @@
             document.getElementById('m-p-stock').value = String(p.stock || 0);
             document.getElementById('m-conversions-list').innerHTML = '';
             (p.conversions || []).forEach(c => addConversionRow(c));
+            if (focusNewConversion) addConversionRow();
             document.getElementById('m-product-modal').classList.remove('hidden');
         }
 
@@ -1261,11 +1440,11 @@
             const unit = document.getElementById('m-p-unit').value.trim();
             const cost = parseFloat(document.getElementById('m-p-cost').value) || 0;
             const price = parseFloat(document.getElementById('m-p-price').value) || 0;
-            const stock = parseInt(document.getElementById('m-p-stock').value) || 0;
+            const stock = parseFloat(document.getElementById('m-p-stock').value) || 0;
 
             const conversions = Array.from(document.querySelectorAll('#m-conversions-list .m-conv-row')).map(row => ({
                 unit: row.querySelector('.m-conv-unit').value.trim(),
-                qty: Math.max(1, parseInt(row.querySelector('.m-conv-qty').value) || 1),
+                qty: Math.max(0.001, parseFloat(row.querySelector('.m-conv-qty').value) || 1),
                 barcode: row.querySelector('.m-conv-barcode').value.trim(),
                 cost: parseFloat(row.querySelector('.m-conv-cost').value) || 0,
                 price: parseFloat(row.querySelector('.m-conv-price').value) || 0
@@ -1281,21 +1460,14 @@
             closeAddProductModal();
         }
 
-        function mDeleteProduct(id) {
-            if (confirm('Xóa sản phẩm này?')) {
-                products = products.filter(x => x.id !== id);
-                saveData(true);
-            }
-        }
-
         // ============================================================
-        // KHÁCH HÀNG & BÁO CÁO
+        // KHÁCH HÀNG, LỊCH SỬ ĐƠN ĐÃ MUA & BÁO CÁO
         // ============================================================
         function mRenderCustomers() {
             document.getElementById('m-customers-list').innerHTML = customers.map(c => `
-                <div class="py-2.5 flex justify-between items-center text-xs">
+                <div onclick="openCustomerDetail(${c.id})" class="py-2.5 flex justify-between items-center text-xs cursor-pointer active:bg-slate-50">
                     <div>
-                        <div class="font-bold text-sm text-slate-800">${c.name}</div>
+                        <div class="font-bold text-sm text-blue-600 underline decoration-blue-200">${c.name}</div>
                         <div class="text-slate-500">${c.phone || ''} ${c.address ? '• ' + c.address : ''}</div>
                     </div>
                     <div class="font-bold ${(c.debt || 0) > 0 ? 'text-red-600' : 'text-slate-400'}">
@@ -1303,6 +1475,47 @@
                     </div>
                 </div>
             `).join('');
+        }
+
+        function openCustomerDetail(custId) {
+            const c = customers.find(x => x.id === custId);
+            if (!c) return;
+
+            document.getElementById('m-cd-title').innerText = c.name;
+            document.getElementById('m-cd-info').innerHTML = `
+                <div>Số điện thoại: <b>${c.phone || 'Không có'}</b></div>
+                <div>Địa chỉ: <b>${c.address || 'Không có'}</b></div>
+                <div>Công nợ hiện tại: <b class="${(c.debt || 0) > 0 ? 'text-red-600' : 'text-emerald-600'}">${Number(c.debt || 0).toLocaleString()} đ</b></div>
+            `;
+
+            const custOrders = orders.filter(o =>
+                (o.customerId && String(o.customerId) === String(c.id)) ||
+                o.customerName === c.name
+            ).slice().reverse();
+
+            document.getElementById('m-cd-orders-count').innerText = `${custOrders.length} đơn`;
+            const listEl = document.getElementById('m-cd-orders-list');
+
+            if (custOrders.length === 0) {
+                listEl.innerHTML = `<div class="py-6 text-center text-xs text-slate-400">Khách hàng chưa có đơn hàng nào.</div>`;
+            } else {
+                listEl.innerHTML = custOrders.map(o => `
+                    <div onclick="mShowOrderDetail('${o.orderId}')" class="py-2.5 flex justify-between items-center text-xs cursor-pointer active:bg-blue-50">
+                        <div>
+                            <div class="font-bold text-blue-600">${o.orderId}</div>
+                            <div class="text-[11px] text-slate-400">${o.date} • ${o.paymentMethod || 'Tiền mặt'}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-extrabold text-emerald-600">${Number(o.totalAmount || 0).toLocaleString()} đ</div>
+                            ${(o.debtAmount || 0) > 0
+                                ? `<div class="text-[11px] font-bold text-red-600">Nợ: ${Number(o.debtAmount).toLocaleString()} đ</div>`
+                                : `<div class="text-[11px] text-slate-400">Đã thanh toán</div>`}
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            document.getElementById('m-customer-detail-modal').classList.remove('hidden');
         }
 
         function openAddCustomerModal() {
