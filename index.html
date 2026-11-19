@@ -26,6 +26,12 @@
         }
         .safe-bottom { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
         .nav-pb { padding-bottom: env(safe-area-inset-bottom); }
+        .feature-locked {
+            opacity: 0.42 !important;
+            pointer-events: none !important;
+            filter: grayscale(0.65);
+            user-select: none;
+        }
         #m-reader video {
             width: 100% !important;
             height: 100% !important;
@@ -72,19 +78,22 @@
                         <span class="text-xs opacity-80">▾</span>
                     </button>
                     <div class="flex items-center gap-2">
-                        <button onclick="manualSync()" id="m-sync-btn" class="text-[11px] font-semibold bg-white/15 px-2.5 py-1 rounded-full">
+                        <button onclick="manualSync()" id="m-sync-btn" class="lic-gate text-[11px] font-semibold bg-white/15 px-2.5 py-1 rounded-full">
                             🟢 Đồng bộ
                         </button>
-                        <button onclick="switchTab('orders')" class="relative p-1.5 rounded-full bg-white/15">
+                        <button onclick="switchTab('orders')" class="lic-gate relative p-1.5 rounded-full bg-white/15">
                             <span class="text-base">🔔</span>
                             <span id="m-order-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full">0</span>
                         </button>
                     </div>
                 </div>
+                <div id="m-license-banner" class="hidden mt-1 bg-amber-400/20 border border-amber-200/40 text-amber-50 rounded-xl px-3 py-2 text-xs font-medium">
+                    🔒 Chi nhánh chưa kích hoạt key. Vào tab <b>Thêm (⋮) &rarr; Cài đặt</b> để nhập key kích hoạt.
+                </div>
             </div>
 
             <!-- Card Doanh thu ngày nổi lên trên nền xanh -->
-            <div class="px-4 -mt-12">
+            <div class="px-4 -mt-12 lic-gate">
                 <div class="bg-white rounded-2xl p-4 shadow-md border border-slate-100">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">DOANH THU NGÀY</span>
@@ -112,7 +121,7 @@
             </div>
 
             <!-- 2 nút lớn chính giữa -->
-            <div class="px-4 mt-3.5 grid grid-cols-2 gap-3">
+            <div class="px-4 mt-3.5 grid grid-cols-2 gap-3 lic-gate">
                 <button onclick="switchTab('pos')" class="bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] text-white rounded-2xl py-3.5 px-3 font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition">
                     <span class="text-lg">🏪</span>
                     <span>Bán tại quầy</span>
@@ -124,7 +133,7 @@
             </div>
 
             <!-- THAO TÁC NHANH -->
-            <div class="px-4 mt-5">
+            <div class="px-4 mt-5 lic-gate">
                 <div class="flex items-center justify-between mb-3">
                     <h2 class="text-sm font-extrabold text-slate-800 uppercase tracking-wide">THAO TÁC NHANH</h2>
                     <button onclick="switchTab('products')" class="text-xs font-semibold text-blue-600">Quản lý kho</button>
@@ -151,7 +160,7 @@
             </div>
 
             <!-- TỔNG HỢP CÔNG NỢ & ĐƠN GẦN NHẤT -->
-            <div class="px-4 mt-5 mb-4">
+            <div class="px-4 mt-5 mb-4 lic-gate">
                 <div class="flex items-center justify-between mb-2.5">
                     <h2 class="text-sm font-extrabold text-slate-800 uppercase tracking-wide">TÌNH HÌNH CÔNG NỢ & ĐƠN</h2>
                     <button onclick="switchTab('orders')" class="text-xs font-semibold text-slate-500">Tất cả ▾</button>
@@ -182,7 +191,7 @@
         </section>
 
         <!-- 2. TAB BÁN TẠI QUẦY (POS) -->
-        <section id="panel-pos" class="tab-panel absolute inset-0 flex-col bg-slate-100 safe-bottom">
+        <section id="panel-pos" class="tab-panel absolute inset-0 flex-col bg-slate-100 safe-bottom lic-gate">
             <div class="bg-blue-600 text-white safe-top px-3 pb-3 space-y-2 shadow">
                 <div class="flex items-center justify-between">
                     <span class="font-bold text-sm">🛒 Bán tại quầy</span>
@@ -239,7 +248,7 @@
         </section>
 
         <!-- 3. TAB ĐƠN HÀNG -->
-        <section id="panel-orders" class="tab-panel absolute inset-0 flex-col bg-slate-100 safe-bottom">
+        <section id="panel-orders" class="tab-panel absolute inset-0 flex-col bg-slate-100 safe-bottom lic-gate">
             <div class="bg-white safe-top px-4 pb-3 border-b flex items-center justify-between sticky top-0 z-10">
                 <h2 class="text-base font-bold text-slate-800">🧾 Lịch Sử Đơn Hàng</h2>
                 <span id="m-orders-count-label" class="text-xs text-slate-500">0 đơn</span>
@@ -248,7 +257,7 @@
         </section>
 
         <!-- 4. TAB SẢN PHẨM & KHO -->
-        <section id="panel-products" class="tab-panel absolute inset-0 flex-col bg-slate-100 safe-bottom">
+        <section id="panel-products" class="tab-panel absolute inset-0 flex-col bg-slate-100 safe-bottom lic-gate">
             <div class="bg-white safe-top px-3 pb-3 border-b space-y-2 sticky top-0 z-10">
                 <div class="flex items-center justify-between">
                     <h2 class="text-base font-bold text-slate-800">📦 Quản Lý Kho</h2>
@@ -266,9 +275,29 @@
             <div id="m-products-list" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
         </section>
 
-        <!-- 5. TAB THÊM / KHÁCH HÀNG & BÁO CÁO -->
+        <!-- 5. TAB THÊM / KHÁCH HÀNG, BÁO CÁO & CÀI ĐẶT KEY -->
         <section id="panel-more" class="tab-panel absolute inset-0 flex-col bg-slate-100 safe-bottom overflow-y-auto safe-top px-4 pb-4 space-y-4">
-            <div class="bg-white rounded-2xl p-4 shadow-sm space-y-3">
+            <!-- KHỐI CÀI ĐẶT / KEY KÍCH HOẠT (LUÔN MỞ ĐỂ NHẬP KEY KHI CHƯA KÍCH HOẠT) -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-blue-100 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-base font-bold text-slate-800">⚙️ Cài Đặt & Key Kích Hoạt</h2>
+                    <span id="m-key-status-badge" class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-red-100 text-red-700">Chưa kích hoạt</span>
+                </div>
+                <p id="m-key-status-desc" class="text-xs text-slate-500">
+                    Nhập key dạng <span class="font-mono font-semibold">BB-YYYYMMDD</span> hoặc <span class="font-mono font-semibold">BB-SDVINHVIEN</span> cho chi nhánh hiện tại.
+                </p>
+                <div class="flex items-center gap-2">
+                    <input type="password" id="m-license-key-input" placeholder="Nhập key kích hoạt..."
+                        autocomplete="off"
+                        class="flex-1 px-3 py-2.5 border rounded-xl text-sm font-mono bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button type="button" onclick="activateStoreKey()"
+                        class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-bold shrink-0">
+                        Kích hoạt
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm space-y-3 lic-gate">
                 <div class="flex items-center justify-between">
                     <h2 class="text-base font-bold text-slate-800">👥 Khách Hàng & Công Nợ</h2>
                     <button onclick="openAddCustomerModal()" class="px-3 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-bold">+ Thêm KH</button>
@@ -276,7 +305,7 @@
                 <div id="m-customers-list" class="divide-y divide-slate-100"></div>
             </div>
 
-            <div id="m-report-box" class="bg-white rounded-2xl p-4 shadow-sm space-y-3">
+            <div id="m-report-box" class="bg-white rounded-2xl p-4 shadow-sm space-y-3 lic-gate">
                 <div class="flex items-center justify-between">
                     <h2 class="text-base font-bold text-slate-800">📊 Báo Cáo Doanh Thu & Lãi</h2>
                     <div class="flex gap-1">
@@ -305,19 +334,19 @@
 
     <!-- THANH ĐIỀU HƯỚNG DƯỚI CÙNG -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around items-center pt-2 nav-pb z-30 shadow-lg">
-        <button onclick="switchTab('overview')" id="mnav-overview" class="flex flex-col items-center gap-0.5 px-2 py-1 text-blue-600 font-bold">
+        <button onclick="switchTab('overview')" id="mnav-overview" class="lic-gate flex flex-col items-center gap-0.5 px-2 py-1 text-blue-600 font-bold">
             <span class="text-xl">🏠</span>
             <span class="text-[11px]">Tổng quan</span>
         </button>
-        <button onclick="switchTab('orders')" id="mnav-orders" class="flex flex-col items-center gap-0.5 px-2 py-1 text-slate-500">
+        <button onclick="switchTab('orders')" id="mnav-orders" class="lic-gate flex flex-col items-center gap-0.5 px-2 py-1 text-slate-500">
             <span class="text-xl">📄</span>
             <span class="text-[11px]">Đơn hàng</span>
         </button>
-        <button onclick="switchTab('pos')" id="mnav-pos" class="flex flex-col items-center gap-0.5 px-2 py-1 text-slate-500">
+        <button onclick="switchTab('pos')" id="mnav-pos" class="lic-gate flex flex-col items-center gap-0.5 px-2 py-1 text-slate-500">
             <span class="text-xl">🛒</span>
             <span class="text-[11px]">Bán quầy</span>
         </button>
-        <button onclick="switchTab('products')" id="mnav-products" class="flex flex-col items-center gap-0.5 px-2 py-1 text-slate-500">
+        <button onclick="switchTab('products')" id="mnav-products" class="lic-gate flex flex-col items-center gap-0.5 px-2 py-1 text-slate-500">
             <span class="text-xl">📦</span>
             <span class="text-[11px]">Sản phẩm</span>
         </button>
@@ -327,7 +356,7 @@
         </button>
     </nav>
 
-    <!-- MODAL CHI TIẾT PHIÊN BẢN / ĐƠN VỊ QUY ĐỔI (GIỐNG ẢNH 4, 5, 6) -->
+    <!-- MODAL CHI TIẾT PHIÊN BẢN / ĐƠN VỊ QUY ĐỔI -->
     <div id="m-variant-detail-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-[55] p-4">
         <div class="bg-white rounded-2xl p-5 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl space-y-3.5 text-sm">
             <div class="flex justify-between items-center border-b pb-2.5">
@@ -383,7 +412,7 @@
                 </div>
                 <input type="number" id="m-p-stock" placeholder="Tồn kho (tính theo ĐV gốc)" value="10" required class="w-full p-2.5 border rounded-xl">
 
-                <!-- ĐƠN VỊ QUY ĐỔI (Cho phép nhập nhiều chữ số tự do, không tự ngắt khi đang gõ) -->
+                <!-- ĐƠN VỊ QUY ĐỔI -->
                 <div class="border-t pt-2.5 space-y-2">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-slate-700 uppercase tracking-wide">Đơn vị quy đổi</span>
@@ -504,6 +533,7 @@
         let selectedCustomer = null;
         let isUserModifiedCash = false;
         let activeOrderDebtId = null;
+        let encodedStoreLicense = '';
 
         let scannerContext = 'pos';
         let html5QrInstance = null;
@@ -517,13 +547,170 @@
                 pKey: `pos_products_${id}`,
                 cKey: `pos_customers_${id}`,
                 oKey: `pos_orders_${id}`,
+                lKey: `pos_lic_blob_${id}`,
                 qKey: `pos_sync_queue_${id}`,
                 tKey: `pos_last_sync_${id}`
             };
         }
 
+        // Mã hóa / giải mã chuỗi bản quyền thành chuỗi ký tự xáo trộn khó đọc thô
+        function encodeLicenseToken(plainKey, storeId) {
+            const seed = `${storeId || 'STORE'}|${plainKey.trim().toUpperCase()}`;
+            let acc = 0x5A3C9E1B;
+            const out = [];
+            for (let i = 0; i < seed.length; i++) {
+                const code = seed.charCodeAt(i);
+                acc = ((acc << 5) - acc + code + i * 17) >>> 0;
+                const mixed = ((code ^ ((acc >>> (i % 16)) & 0xff)) + (i % 7) + 33) % 94;
+                out.push(String.fromCharCode(33 + mixed));
+            }
+            const suffix = (acc >>> 0).toString(36).toUpperCase().padStart(7, 'X');
+            return `XK${out.join('')}Z${suffix}`;
+        }
+
+        function decodeLicenseToken(token, storeId) {
+            if (!token || typeof token !== 'string' || !token.startsWith('XK') || !token.includes('Z')) {
+                return null;
+            }
+            const body = token.slice(2, token.lastIndexOf('Z'));
+            const suffix = token.slice(token.lastIndexOf('Z') + 1);
+            const prefix = `${storeId || 'STORE'}|`;
+            if (body.length <= prefix.length) return null;
+
+            let acc = 0x5A3C9E1B;
+            const plainChars = [];
+            for (let i = 0; i < body.length; i++) {
+                const encVal = body.charCodeAt(i) - 33;
+                const shift = (i % 7) + 33;
+                let foundChar = null;
+                for (let cand = 32; cand <= 126; cand++) {
+                    const mixed = ((cand ^ ((acc >>> (i % 16)) & 0xff)) + shift) % 94;
+                    if (mixed === encVal) {
+                        const ch = String.fromCharCode(cand);
+                        if (i < prefix.length && ch !== prefix[i]) continue;
+                        foundChar = ch;
+                        acc = ((acc << 5) - acc + cand + i * 17) >>> 0;
+                        break;
+                    }
+                }
+                if (!foundChar) return null;
+                plainChars.push(foundChar);
+            }
+            const expectedSuffix = (acc >>> 0).toString(36).toUpperCase().padStart(7, 'X');
+            if (expectedSuffix !== suffix) return null;
+            const full = plainChars.join('');
+            if (!full.startsWith(prefix)) return null;
+            return full.slice(prefix.length);
+        }
+
+        function validateLicenseKey(rawKey) {
+            const key = (rawKey || '').trim().toUpperCase();
+            if (key === 'BB-SDVINHVIEN') {
+                return { valid: true, normalizedKey: key, label: 'Vĩnh viễn' };
+            }
+            const match = /^BB-(\d{4})(\d{2})(\d{2})$/.exec(key);
+            if (!match) {
+                return { valid: false, reason: 'Key phải có dạng BB-YYYYMMDD hoặc BB-SDVINHVIEN.' };
+            }
+            const year = Number(match[1]);
+            const month = Number(match[2]);
+            const day = Number(match[3]);
+            const expDate = new Date(year, month - 1, day, 23, 59, 59, 999);
+            if (
+                expDate.getFullYear() !== year ||
+                expDate.getMonth() !== month - 1 ||
+                expDate.getDate() !== day
+            ) {
+                return { valid: false, reason: 'Ngày hết hạn trong key không hợp lệ.' };
+            }
+            if (Date.now() > expDate.getTime()) {
+                return { valid: false, reason: `Key đã hết hạn vào ngày ${match[3]}/${match[2]}/${match[1]}.` };
+            }
+            return { valid: true, normalizedKey: key, label: `Hạn ${match[3]}/${match[2]}/${match[1]}` };
+        }
+
+        function getActiveLicenseInfo() {
+            const decoded = decodeLicenseToken(encodedStoreLicense, currentStoreId);
+            if (!decoded) return { active: false, label: 'Chưa kích hoạt' };
+            const check = validateLicenseKey(decoded);
+            if (!check.valid) return { active: false, label: check.reason };
+            return { active: true, label: check.label };
+        }
+
+        function applyLicenseLockUI() {
+            const info = getActiveLicenseInfo();
+            const isUnlocked = Boolean(currentStoreId) && info.active;
+
+            document.querySelectorAll('.lic-gate').forEach(el => {
+                if (isUnlocked) el.classList.remove('feature-locked');
+                else el.classList.add('feature-locked');
+            });
+
+            const banner = document.getElementById('m-license-banner');
+            if (banner) {
+                if (!isUnlocked && currentStoreId) banner.classList.remove('hidden');
+                else banner.classList.add('hidden');
+            }
+
+            const badge = document.getElementById('m-key-status-badge');
+            const desc = document.getElementById('m-key-status-desc');
+            if (badge && desc) {
+                if (isUnlocked) {
+                    badge.className = 'text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700';
+                    badge.innerText = 'Đã kích hoạt';
+                    desc.innerText = `Chi nhánh ${currentStoreId} đang hoạt động (${info.label}).`;
+                } else {
+                    badge.className = 'text-[11px] font-bold px-2.5 py-1 rounded-full bg-red-100 text-red-700';
+                    badge.innerText = 'Chưa kích hoạt';
+                    desc.innerHTML = `Nhập key dạng <span class="font-mono font-semibold">BB-YYYYMMDD</span> hoặc <span class="font-mono font-semibold">BB-SDVINHVIEN</span> cho chi nhánh hiện tại.`;
+                }
+            }
+
+            if (!isUnlocked && currentStoreId) {
+                ['overview', 'orders', 'pos', 'products'].forEach(t => {
+                    document.getElementById(`panel-${t}`).classList.remove('active');
+                });
+                document.getElementById('panel-more').classList.add('active');
+                ['overview', 'orders', 'pos', 'products', 'more'].forEach(t => {
+                    const nav = document.getElementById(`mnav-${t}`);
+                    if (!nav) return;
+                    nav.classList.remove('text-blue-600', 'font-bold');
+                    nav.classList.add('text-slate-500');
+                });
+                const moreNav = document.getElementById('mnav-more');
+                if (moreNav) {
+                    moreNav.classList.remove('text-slate-500');
+                    moreNav.classList.add('text-blue-600', 'font-bold');
+                }
+            }
+        }
+
+        function activateStoreKey() {
+            if (!currentStoreId) {
+                alert('Vui lòng đăng nhập chi nhánh trước.');
+                return;
+            }
+            const inputEl = document.getElementById('m-license-key-input');
+            const rawVal = inputEl.value || '';
+            const check = validateLicenseKey(rawVal);
+
+            // Luôn xóa trắng ô nhập sau khi bấm Kích hoạt
+            inputEl.value = '';
+
+            if (!check.valid) {
+                alert(`❌ Không thể kích hoạt: ${check.reason}`);
+                return;
+            }
+
+            encodedStoreLicense = encodeLicenseToken(check.normalizedKey, currentStoreId);
+            saveData(true);
+            applyLicenseLockUI();
+            switchTab('overview');
+            alert(`✅ Đã kích hoạt key cho chi nhánh ${currentStoreId} (${check.label}).`);
+        }
+
         function loadStoreData() {
-            const { pKey, cKey, oKey } = getStoreKeys(currentStoreId);
+            const { pKey, cKey, oKey, lKey } = getStoreKeys(currentStoreId);
             products = JSON.parse(localStorage.getItem(pKey)) || [
                 { id: 1, barcode: '8934673', name: `Sữa mẫu (${currentStoreId})`, unit: 'Hộp', cost: 3000, price: 3500, stock: 50, conversions: [{ unit: 'Vỉ', qty: 4, barcode: '8934673V', cost: 12000, price: 14000 }] }
             ];
@@ -531,17 +718,23 @@
                 { id: 1, name: 'Khách Lẻ', phone: '0000000000', address: 'Tại quầy', debt: 0 }
             ];
             orders = JSON.parse(localStorage.getItem(oKey)) || [];
+            encodedStoreLicense = localStorage.getItem(lKey) || '';
             renderCustomerSelect();
             mRenderCart();
             refreshAllMobileUI();
         }
 
         function saveData(markDirtyForCloud = true) {
-            const { pKey, cKey, oKey, qKey, tKey } = getStoreKeys(currentStoreId);
+            const { pKey, cKey, oKey, lKey, qKey, tKey } = getStoreKeys(currentStoreId);
             const nowTs = Date.now();
             localStorage.setItem(pKey, JSON.stringify(products));
             localStorage.setItem(cKey, JSON.stringify(customers));
             localStorage.setItem(oKey, JSON.stringify(orders));
+            if (encodedStoreLicense) {
+                localStorage.setItem(lKey, encodedStoreLicense);
+            } else {
+                localStorage.removeItem(lKey);
+            }
             localStorage.setItem(tKey, String(nowTs));
 
             if (markDirtyForCloud) {
@@ -574,6 +767,7 @@
                         products = remote.products || products;
                         customers = remote.customers || customers;
                         orders = remote.orders || orders;
+                        if (remote.licenseToken) encodedStoreLicense = remote.licenseToken;
                         saveData(false);
                     }
                 }
@@ -590,12 +784,13 @@
             await fetch(`${CLOUD_DB_URL}/stores/${currentStoreId}.json`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ products, customers, orders, updatedAt })
+                body: JSON.stringify({ products, customers, orders, licenseToken: encodedStoreLicense, updatedAt })
             });
             localStorage.removeItem(qKey);
         }
 
         function manualSync() {
+            if (!getActiveLicenseInfo().active) return;
             syncWithCloud();
             refreshAllMobileUI();
         }
@@ -635,6 +830,10 @@
         }
 
         function switchTab(tab) {
+            if (tab !== 'more' && !getActiveLicenseInfo().active) {
+                alert('Chi nhánh chưa kích hoạt key. Vui lòng nhập key trong mục Thêm (⋮) > Cài đặt.');
+                tab = 'more';
+            }
             ['overview', 'orders', 'pos', 'products', 'more'].forEach(t => {
                 document.getElementById(`panel-${t}`).classList.remove('active');
                 const nav = document.getElementById(`mnav-${t}`);
@@ -651,6 +850,7 @@
             if (tab === 'pos') { renderCustomerSelect(); mRenderCart(); }
             if (tab === 'products') mRenderProducts();
             if (tab === 'more') { mRenderCustomers(); mLoadReport('today'); }
+            applyLicenseLockUI();
         }
 
         function refreshAllMobileUI() {
@@ -659,12 +859,14 @@
             mRenderProducts();
             mRenderCustomers();
             mLoadReport('today');
+            applyLicenseLockUI();
         }
 
         // ============================================================
         // QUÉT MÃ VẠCH SIÊU NHANH BẰNG HTML5-QRCODE (ZBAR WASM)
         // ============================================================
         async function openBarcodeScanner(ctx) {
+            if (!getActiveLicenseInfo().active) return;
             scannerContext = ctx;
             lastCandidateCode = '';
             candidateCount = 0;
@@ -1067,6 +1269,7 @@
         }
 
         function mCheckout() {
+            if (!getActiveLicenseInfo().active) return;
             if (cart.length === 0) { alert('Giỏ hàng đang trống!'); return; }
             const sub = cart.reduce((s, i) => s + i.quantity * i.price, 0);
             const tax = parseFloat(document.getElementById('m-tax-input').value) || 0;
@@ -1155,6 +1358,7 @@
         }
 
         function mShowOrderDetail(orderId) {
+            if (!getActiveLicenseInfo().active) return;
             const o = orders.find(x => x.orderId === orderId);
             if (!o) return;
             activeOrderDebtId = o.orderId;
@@ -1206,13 +1410,16 @@
             const list = document.getElementById('m-conversions-list');
             const row = document.createElement('div');
             row.className = 'm-conv-row bg-slate-50 border border-slate-200 rounded-xl p-2.5 space-y-2';
+            const hasManualCost = data.cost !== undefined && data.cost !== '';
+            const hasManualPrice = data.price !== undefined && data.price !== '';
             row.innerHTML = `
                 <div class="flex items-center justify-between gap-2">
-                    <input type="text" placeholder="ĐV quy đổi (VD: Vỉ, Lốc)" value="${data.unit || ''}" required
+                    <input type="text" placeholder="ĐV quy đổi (VD: Vỉ, Lốc, Thùng)" value="${data.unit || ''}" required
                         class="m-conv-unit flex-1 p-2 border rounded-lg bg-white text-xs font-semibold">
                     <div class="flex items-center gap-1">
                         <span class="text-[11px] text-slate-500 whitespace-nowrap">SL quy đổi:</span>
                         <input type="number" min="1" step="any" placeholder="SL" value="${data.qty ?? ''}" required
+                            onchange="autoCalcConversionRow(this)"
                             class="m-conv-qty w-16 p-2 border rounded-lg bg-white text-xs font-bold text-center">
                     </div>
                     <button type="button" onclick="this.closest('.m-conv-row').remove()"
@@ -1222,12 +1429,36 @@
                     <input type="text" placeholder="Mã vạch riêng" value="${data.barcode || ''}"
                         class="m-conv-barcode p-2 border rounded-lg bg-white text-xs font-mono">
                     <input type="number" step="any" placeholder="Giá vốn" value="${data.cost ?? ''}" required
+                        data-manual="${hasManualCost ? '1' : '0'}"
+                        oninput="this.dataset.manual='1'"
                         class="m-conv-cost p-2 border rounded-lg bg-white text-xs">
                     <input type="number" step="any" placeholder="Giá bán" value="${data.price ?? ''}" required
+                        data-manual="${hasManualPrice ? '1' : '0'}"
+                        oninput="this.dataset.manual='1'"
                         class="m-conv-price p-2 border rounded-lg bg-white text-xs">
                 </div>
             `;
             list.appendChild(row);
+        }
+
+        function autoCalcConversionRow(qtyInput) {
+            const row = qtyInput.closest('.m-conv-row');
+            if (!row) return;
+            const qty = parseFloat(qtyInput.value);
+            if (!qty || qty <= 0) return;
+
+            const baseCost = parseFloat(document.getElementById('m-p-cost').value) || 0;
+            const basePrice = parseFloat(document.getElementById('m-p-price').value) || 0;
+
+            const costEl = row.querySelector('.m-conv-cost');
+            const priceEl = row.querySelector('.m-conv-price');
+
+            if (costEl && costEl.dataset.manual !== '1' && baseCost > 0) {
+                costEl.value = String(Math.round(baseCost * qty * 1000) / 1000);
+            }
+            if (priceEl && priceEl.dataset.manual !== '1' && basePrice > 0) {
+                priceEl.value = String(Math.round(basePrice * qty * 1000) / 1000);
+            }
         }
 
         function mRenderProducts() {
@@ -1294,6 +1525,7 @@
         }
 
         function openVariantDetail(prodId, convIdx = null) {
+            if (!getActiveLicenseInfo().active) return;
             const p = products.find(x => x.id === prodId);
             if (!p) return;
 
@@ -1396,6 +1628,7 @@
         }
 
         function openAddProductModal(prefillBarcode = '') {
+            if (!getActiveLicenseInfo().active) return;
             document.getElementById('m-p-modal-title').innerText = 'Thêm Sản Phẩm Mới';
             document.getElementById('m-edit-pid').value = '';
             document.getElementById('m-p-barcode').value = prefillBarcode || '';
@@ -1478,6 +1711,7 @@
         }
 
         function openCustomerDetail(custId) {
+            if (!getActiveLicenseInfo().active) return;
             const c = customers.find(x => x.id === custId);
             if (!c) return;
 
@@ -1519,6 +1753,7 @@
         }
 
         function openAddCustomerModal() {
+            if (!getActiveLicenseInfo().active) return;
             document.getElementById('m-c-name').value = '';
             document.getElementById('m-c-phone').value = '';
             document.getElementById('m-c-address').value = '';
