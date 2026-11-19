@@ -8,7 +8,7 @@
     <meta name="theme-color" content="#1d8cf8">
     <title>Bán Hàng Mobile - Sapo Style</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -26,6 +26,12 @@
         }
         .safe-bottom { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
         .nav-pb { padding-bottom: env(safe-area-inset-bottom); }
+        #m-reader video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            border-radius: 0.75rem;
+        }
     </style>
 </head>
 <body class="h-screen w-screen overflow-hidden flex flex-col select-none">
@@ -321,25 +327,6 @@
         </button>
     </nav>
 
-    <!-- MODAL QUÉT MÃ VẠCH / NHẬP MÃ NHANH -->
-    <div id="m-scanner-modal" class="fixed inset-0 bg-black/75 flex items-center justify-center hidden z-50 p-4">
-        <div class="bg-white rounded-2xl p-4 w-full max-w-md space-y-3 shadow-2xl">
-            <div class="flex items-center justify-between border-b pb-2">
-                <h3 class="font-bold text-base text-slate-800">📷 Quét / Nhập Mã Vạch</h3>
-                <button onclick="closeBarcodeScanner()" class="text-xl font-bold text-slate-400">&times;</button>
-            </div>
-            <video id="m-scanner-video" class="w-full h-56 bg-slate-900 rounded-xl object-cover hidden" playsinline autoplay muted></video>
-            <p id="m-scanner-hint" class="text-xs text-slate-500">Đưa mã vạch vào khung camera để tự nhận mã, hoặc gõ mã vào ô dưới:</p>
-            <div class="flex gap-2">
-                <input type="text" id="m-scanner-manual-code" placeholder="Nhập hoặc quét mã vạch..."
-                    onkeydown="if(event.key==='Enter'){submitScannedCode(this.value);}"
-                    class="flex-1 p-2.5 border rounded-xl font-mono text-sm">
-                <button onclick="submitScannedCode(document.getElementById('m-scanner-manual-code').value)"
-                    class="px-4 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm">Áp dụng</button>
-            </div>
-        </div>
-    </div>
-
     <!-- MODAL THÊM / SỬA SẢN PHẨM -->
     <div id="m-product-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50 p-4">
         <div class="bg-white rounded-2xl p-5 w-full max-w-md max-h-[88vh] overflow-y-auto shadow-2xl">
@@ -405,6 +392,42 @@
         </div>
     </div>
 
+    <!-- MODAL QUÉT MÃ VẠCH SIÊU NHANH (NỔI TRÊN CÙNG Z-70) -->
+    <div id="m-scanner-modal" class="fixed inset-0 bg-black/85 flex items-center justify-center hidden z-[70] p-4">
+        <div class="bg-white rounded-2xl p-4 w-full max-w-md space-y-3 shadow-2xl">
+            <div class="flex items-center justify-between border-b pb-2">
+                <h3 class="font-bold text-base text-slate-800">📷 Quét Mã Vạch</h3>
+                <div class="flex items-center gap-2">
+                    <button type="button" id="m-flash-btn" onclick="toggleScannerFlash()" class="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold hidden">⚡ Đèn</button>
+                    <button type="button" onclick="closeBarcodeScanner()" class="text-2xl leading-none font-bold text-slate-400 px-1">&times;</button>
+                </div>
+            </div>
+
+            <!-- Khung camera cắt vùng quét giữa giống Sapo -->
+            <div class="relative w-full h-56 bg-slate-900 rounded-xl overflow-hidden">
+                <div id="m-reader" class="w-full h-full"></div>
+                <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+                    <div class="w-[82%] h-24 border-2 border-emerald-400 rounded-xl shadow-[0_0_0_9999px_rgba(0,0,0,0.42)]"></div>
+                </div>
+            </div>
+
+            <!-- Thanh Zoom nếu camera hỗ trợ -->
+            <div id="m-zoom-box" class="hidden flex items-center gap-2 text-xs text-slate-500">
+                <span>🔍 Zoom:</span>
+                <input type="range" id="m-zoom-slider" min="1" max="3" step="0.1" value="1" oninput="setScannerZoom(this.value)" class="flex-1">
+            </div>
+
+            <p id="m-scanner-hint" class="text-xs text-slate-500">Đưa vạch mã vào khung xanh ở giữa để nhận ngay:</p>
+            <div class="flex gap-2">
+                <input type="text" id="m-scanner-manual-code" placeholder="Hoặc gõ mã vạch tại đây..."
+                    onkeydown="if(event.key==='Enter'){submitScannedCode(this.value);}"
+                    class="flex-1 p-2.5 border rounded-xl font-mono text-sm">
+                <button type="button" onclick="submitScannedCode(document.getElementById('m-scanner-manual-code').value)"
+                    class="px-4 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm">Áp dụng</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const CLOUD_DB_URL = "";
 
@@ -418,12 +441,13 @@
         let isUserModifiedCash = false;
         let activeOrderDebtId = null;
 
-        // Biến hỗ trợ quét mã vạch tốc độ cao (ZXing TRY_HARDER + Native BarcodeDetector fallback)
+        // Biến hỗ trợ quét mã vạch html5-qrcode (ZBar WebAssembly siêu nhanh + xác nhận 2 lần chống đọc nhầm)
         let scannerContext = 'pos';
-        let zxingReader = null;
-        let zxingControls = null;
-        let nativeScanRafId = null;
-        let lastDetectedCode = '';
+        let html5QrInstance = null;
+        let lastCandidateCode = '';
+        let candidateCount = 0;
+        let isScannerClosing = false;
+        let isFlashOn = false;
 
         function getStoreKeys(id) {
             return {
@@ -575,130 +599,153 @@
         }
 
         // ============================================================
-        // QUÉT MÃ VẠCH TỐC ĐỘ CAO & ĐA HƯỚNG (ZXING + BARCODEDETECTOR)
+        // QUÉT MÃ VẠCH SIÊU NHANH BẰNG HTML5-QRCODE (ZBAR WASM)
         // ============================================================
-        function buildZxingHints() {
-            if (!window.ZXing || !window.ZXing.DecodeHintType) return null;
-            const hints = new Map();
-            hints.set(window.ZXing.DecodeHintType.TRY_HARDER, true);
-            if (window.ZXing.BarcodeFormat) {
-                hints.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS, [
-                    window.ZXing.BarcodeFormat.EAN_13,
-                    window.ZXing.BarcodeFormat.EAN_8,
-                    window.ZXing.BarcodeFormat.CODE_128,
-                    window.ZXing.BarcodeFormat.CODE_39,
-                    window.ZXing.BarcodeFormat.UPC_A,
-                    window.ZXing.BarcodeFormat.UPC_E,
-                    window.ZXing.BarcodeFormat.ITF,
-                    window.ZXing.BarcodeFormat.QR_CODE
-                ]);
-            }
-            return hints;
-        }
-
         async function openBarcodeScanner(ctx) {
             scannerContext = ctx;
-            lastDetectedCode = '';
+            lastCandidateCode = '';
+            candidateCount = 0;
+            isScannerClosing = false;
+            isFlashOn = false;
+
             const modal = document.getElementById('m-scanner-modal');
-            const video = document.getElementById('m-scanner-video');
             const hint = document.getElementById('m-scanner-hint');
             const input = document.getElementById('m-scanner-manual-code');
+            const flashBtn = document.getElementById('m-flash-btn');
+            const zoomBox = document.getElementById('m-zoom-box');
 
             input.value = '';
-            video.classList.add('hidden');
-            hint.innerText = 'Đang mở camera quét nhanh mã vạch...';
+            flashBtn.classList.add('hidden');
+            zoomBox.classList.add('hidden');
+            hint.innerText = 'Đang mở camera quét siêu tốc...';
             modal.classList.remove('hidden');
 
             try {
-                const hints = buildZxingHints();
-                if (window.ZXing && window.ZXing.BrowserMultiFormatReader) {
-                    if (!zxingReader) {
-                        zxingReader = new window.ZXing.BrowserMultiFormatReader(hints, 120);
-                    }
-                    video.classList.remove('hidden');
-                    hint.innerText = 'Đưa mã vạch vào khung camera (hỗ trợ quét nhanh nhiều góc/chiều)...';
-
-                    zxingControls = await zxingReader.decodeFromConstraints(
-                        {
-                            video: {
-                                facingMode: { ideal: 'environment' },
-                                width: { ideal: 640 },
-                                height: { ideal: 480 }
-                            }
-                        },
-                        video,
-                        (result) => {
-                            if (result && result.getText) {
-                                const code = result.getText().trim();
-                                if (code && code !== lastDetectedCode) {
-                                    lastDetectedCode = code;
-                                    submitScannedCode(code);
-                                }
-                            }
-                        }
-                    );
-
-                    // Tăng tốc thêm bằng Native BarcodeDetector nếu trình duyệt hỗ trợ song song
-                    if ('BarcodeDetector' in window && video.readyState >= 2) {
-                        const nativeDetector = new BarcodeDetector({
-                            formats: ['ean_13', 'ean_8', 'code_128', 'code_39', 'upc_a', 'upc_e', 'itf', 'qr_code']
-                        });
-                        const fastLoop = async () => {
-                            if (modal.classList.contains('hidden')) return;
-                            try {
-                                if (video.readyState >= 2 && !video.paused) {
-                                    const found = await nativeDetector.detect(video);
-                                    if (found && found.length > 0 && found[0].rawValue) {
-                                        const c = found[0].rawValue.trim();
-                                        if (c && c !== lastDetectedCode) {
-                                            lastDetectedCode = c;
-                                            submitScannedCode(c);
-                                            return;
-                                        }
-                                    }
-                                }
-                            } catch (_) {}
-                            nativeScanRafId = requestAnimationFrame(fastLoop);
-                        };
-                        nativeScanRafId = requestAnimationFrame(fastLoop);
-                    }
-                } else {
-                    hint.innerText = 'Không tải được bộ quét — nhập hoặc quét mã vào ô bên dưới:';
+                if (typeof Html5Qrcode === 'undefined') {
+                    hint.innerText = 'Không tải được bộ quét — hãy nhập mã vào ô dưới:';
                     input.focus();
+                    return;
                 }
-            } catch (_) {
-                hint.innerText = 'Chưa mở được camera — hãy nhập hoặc quét mã vào ô bên dưới:';
+
+                if (html5QrInstance) {
+                    try { await html5QrInstance.stop(); } catch (_) {}
+                    try { html5QrInstance.clear(); } catch (_) {}
+                }
+
+                const formats = [
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.UPC_E,
+                    Html5QrcodeSupportedFormats.ITF,
+                    Html5QrcodeSupportedFormats.QR_CODE
+                ];
+
+                html5QrInstance = new Html5Qrcode('m-reader', {
+                    formatsToSupport: formats,
+                    experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+                    verbose: false
+                });
+
+                await html5QrInstance.start(
+                    { facingMode: 'environment' },
+                    {
+                        fps: 25,
+                        qrbox: function(viewfinderWidth, viewfinderHeight) {
+                            return {
+                                width: Math.floor(viewfinderWidth * 0.82),
+                                height: Math.floor(viewfinderHeight * 0.44)
+                            };
+                        },
+                        disableFlip: false
+                    },
+                    (decodedText) => {
+                        if (isScannerClosing) return;
+                        const code = (decodedText || '').trim();
+                        if (!code) return;
+
+                        // Khớp 2 lần liên tiếp cùng 1 mã để chống đọc nhầm ký tự/vỏ chai
+                        if (code === lastCandidateCode) {
+                            candidateCount += 1;
+                        } else {
+                            lastCandidateCode = code;
+                            candidateCount = 1;
+                        }
+
+                        if (candidateCount >= 2) {
+                            isScannerClosing = true;
+                            if (navigator.vibrate) {
+                                try { navigator.vibrate(60); } catch (_) {}
+                            }
+                            submitScannedCode(code);
+                        }
+                    },
+                    () => {}
+                );
+
+                hint.innerText = 'Đưa mã vạch vào khung xanh ở giữa để nhận ngay!';
+
+                // Kiểm tra hỗ trợ Flash & Zoom trên camera đang mở
+                try {
+                    const caps = html5QrInstance.getRunningTrackCameraCapabilities();
+                    if (caps && caps.torchFeature && caps.torchFeature().isSupported()) {
+                        flashBtn.classList.remove('hidden');
+                    }
+                    if (caps && caps.zoomFeature && caps.zoomFeature().isSupported()) {
+                        const zSlider = document.getElementById('m-zoom-slider');
+                        zSlider.min = caps.zoomFeature().min();
+                        zSlider.max = Math.min(4, caps.zoomFeature().max());
+                        zSlider.step = caps.zoomFeature().step() || 0.1;
+                        zSlider.value = caps.zoomFeature().value() || 1;
+                        zoomBox.classList.remove('hidden');
+                    }
+                } catch (_) {}
+
+            } catch (err) {
+                hint.innerText = 'Chưa mở được camera (cần chạy trên HTTPS và cấp quyền) — hãy gõ mã ở dưới:';
                 input.focus();
             }
         }
 
-        function closeBarcodeScanner() {
-            if (nativeScanRafId) {
-                cancelAnimationFrame(nativeScanRafId);
-                nativeScanRafId = null;
+        async function toggleScannerFlash() {
+            if (!html5QrInstance) return;
+            try {
+                isFlashOn = !isFlashOn;
+                await html5QrInstance.applyVideoConstraints({
+                    advanced: [{ torch: isFlashOn }]
+                });
+                const btn = document.getElementById('m-flash-btn');
+                btn.className = isFlashOn
+                    ? 'px-2.5 py-1 bg-amber-400 text-slate-900 rounded-lg text-xs font-bold'
+                    : 'px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold';
+            } catch (_) {}
+        }
+
+        async function setScannerZoom(val) {
+            if (!html5QrInstance) return;
+            try {
+                await html5QrInstance.applyVideoConstraints({
+                    advanced: [{ zoom: parseFloat(val) }]
+                });
+            } catch (_) {}
+        }
+
+        async function closeBarcodeScanner() {
+            isScannerClosing = true;
+            if (html5QrInstance) {
+                try { await html5QrInstance.stop(); } catch (_) {}
+                try { html5QrInstance.clear(); } catch (_) {}
+                html5QrInstance = null;
             }
-            if (zxingControls && typeof zxingControls.stop === 'function') {
-                try { zxingControls.stop(); } catch (_) {}
-                zxingControls = null;
-            }
-            if (zxingReader && typeof zxingReader.reset === 'function') {
-                try { zxingReader.reset(); } catch (_) {}
-            }
-            const video = document.getElementById('m-scanner-video');
-            if (video.srcObject) {
-                try {
-                    video.srcObject.getTracks().forEach(t => t.stop());
-                } catch (_) {}
-                video.srcObject = null;
-            }
-            video.classList.add('hidden');
             document.getElementById('m-scanner-modal').classList.add('hidden');
         }
 
-        function submitScannedCode(rawCode) {
+        async function submitScannedCode(rawCode) {
             const code = (rawCode || '').trim();
             if (!code) return;
-            closeBarcodeScanner();
+            await closeBarcodeScanner();
 
             if (scannerContext === 'product-form') {
                 document.getElementById('m-p-barcode').value = code;
